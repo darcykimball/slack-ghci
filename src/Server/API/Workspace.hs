@@ -1,18 +1,20 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TypeOperators #-}
 -- API for creating and manipulating separate workspaces, i.e. package
 -- environments possibly coupled with some persistent state.
 module Server.API.Workspace where
 
 
-import Data.FilePath
+import System.FilePath
 
 
 import Data.Text (Text)
+import Network.HTTP.Types.Status
 import Servant.API
+import Servant.Checked.Exceptions
 
 
--- FIXME: There should be a type-level map on alternated sub-apis? Use it.
 type WorkspaceAPI =
   "workspaces"
     :> (
@@ -23,8 +25,11 @@ type WorkspaceAPI =
 
 type CreateAPI =
   "create"
-    :> ReqBody '[JSON] WorkspaceEnv
+    :> ReqBody '[JSON] WorkspaceSpec
+    :> Throws WorkspaceAlreadyExists
     :> PostCreated '[Header "Location" RelativeURI] NoContent
+
+data WorkspaceAlreadyExists = WorkspaceAlreadyExists
 
 type RelativeURI = Text
 
@@ -32,21 +37,29 @@ type RelativeURI = Text
 type DeleteAPI =
   "delete"
     :> Capture "name" WorkspaceName
-    :> Delete '[] ()
+    :> Throws NonexistentWorkspace
+    :> Delete '[] NoContent
+
+data NonexistentWorkspace = NonexistentWorkspace
+  deriving (Show)
+
+instance ErrStatus NonexistentWorkspace where
+  toErrStatus _ = status404 -- TODO: This value is debatable?
 
 
 type QueryAPI =
+  "query"
     :> Capture "name" WorkspaceName
-    :> Get '[JSON] WorkspaceEnv
+    :> Throws NonexistentWorkspace
+    :> Get '[JSON] WorkspaceSpec
   
 
 -- This is the resource identifier both given by client and returned back when
 -- successfully created.
 type WorkspaceName = Text
 
-data WorkspaceEnv = WorkspaceEnv {
+data WorkspaceSpec = WorkspaceSpec {
     _ws_name :: WorkspaceName
-    -- The haskell package set available in this workspace.
-    -- Invariant: always sorted
-  , _ws_packageSet :: [Text] 
+  , _ws_haskellPackages :: [Text]
+  , _ws_systemPackages :: [Text]
   } deriving (Show, Eq)

@@ -22,8 +22,13 @@ common shared-properties
   build-depends:
       aeson
     , base >=4.12 && <4.13
+    , containers
+    , data-default
+    , filepath
     , ghcid
+    , http-types
     , lens
+    , mtl
     , servant
     , servant-checked-exceptions
     , text

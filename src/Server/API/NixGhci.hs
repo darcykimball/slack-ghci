@@ -1,7 +1,11 @@
-{-# LANGUAGE DataKinds -#}
-{-# LANGUAGE DeriveGeneric -#}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeOperators #-}
 module Server.API.NixGhci where
+
+
+import GHC.Generics
 
 
 import Data.Aeson
@@ -24,18 +28,24 @@ type RelativeURI = SessionID
 -- described below in the commands API.
 type StartAPI =
   "start"
-    :> Throws StartError
+    :> Throws SessionAlreadyExists
+    :> Throws MaxSessionLimitReached
     :> PostCreated '[Header "Location" RelativeURI] StartSuccess
 
-data StartError =
-    SessionAlreadyExists
-  | MaxSessionLimitReached Natural
+data SessionAlreadyExists = SessionAlreadyExists
   deriving (Generic)
-instance ToJSON StartError
+instance ToJSON SessionAlreadyExists
+
+data MaxSessionLimitReached = MaxSessionLimitReached Natural
+  deriving (Generic)
+instance ToJSON MaxSessionLimitReached
 
 data StartSuccess = StartSuccess {
     _sessionID :: SessionID
-  , _loadMessages :: [Load]
+  -- TODO: Decide whether or not it's worth sending back an anonymized version
+  -- of post-load messages, since they'd leak details about the filesystem.
+  --, _loadMessages :: [Load]
+  , _modulesLoaded :: [Text]
   } deriving (Generic)
 instance ToJSON StartSuccess
 
@@ -65,14 +75,19 @@ type CommandAPI =
   "command"
     :> Capture "commandText" Text
     :> Throws CommandError
+    :> Throws CommandTimedOut
     :> Patch '[JSON] CommandSuccess
 
--- TODO: If possible, make this a sum type over things like type errors, syntax
--- errors, etc., which'll make it easier on the client-side to decide how to
--- process output. For now, it's just whatever ghci spits out.
+-- TODO: Should put a server-local timestamp on these, in case things happen out
+-- of order?
 data CommandError = CommandError Text
-  deriving (Generic)
+  deriving (Show, Generic)
 instance ToJSON CommandError
+
+data CommandTimedOut = CommandTimedOut
+  deriving (Show, Generic)
+instance ToJSON CommandTimedOut
+
 
 data CommandSuccess = CommandSuccess Text
   deriving (Generic)
