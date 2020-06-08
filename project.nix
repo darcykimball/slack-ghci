@@ -1,6 +1,6 @@
 { mkDerivation, aeson, base, containers, data-default, filepath
-, ghcid, http-types, lens, mtl, servant, servant-checked-exceptions
-, stdenv, text
+, ghcid, http-types, lens, mtl, process, servant
+, servant-checked-exceptions, stdenv, text
 }:
 mkDerivation {
   pname = "slack-ghci";
@@ -10,11 +10,11 @@ mkDerivation {
   isExecutable = true;
   libraryHaskellDepends = [
     aeson base containers data-default filepath ghcid http-types lens
-    mtl servant servant-checked-exceptions text
+    mtl process servant servant-checked-exceptions text
   ];
   executableHaskellDepends = [
     aeson base containers data-default filepath ghcid http-types lens
-    mtl servant servant-checked-exceptions text
+    mtl process servant servant-checked-exceptions text
   ];
   license = "unknown";
   hydraPlatforms = stdenv.lib.platforms.none;

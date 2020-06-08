@@ -11,6 +11,7 @@ module Server.NixGhci (
 import System.Process
 
 
+import Control.Lens
 import Data.Text (Text)
 import Language.Haskell.Ghcid
 

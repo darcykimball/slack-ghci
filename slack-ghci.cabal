@@ -29,6 +29,7 @@ common shared-properties
     , http-types
     , lens
     , mtl
+    , process
     , servant
     , servant-checked-exceptions
     , text
@@ -37,6 +38,10 @@ library
   import: shared-properties
   exposed-modules:
     Server
+    Server.API.NixGhci
+    Server.API.Workspace
+    Server.NixGhci
+    Server.Workspace
   hs-source-dirs:    src
 
 executable slack-ghci
